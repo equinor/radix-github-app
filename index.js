@@ -21,7 +21,7 @@ const webhooks = new OctokitWebhooksApi({
   secret: process.env.GITHUB_WEBHOOK_SECRET,
 });
 
-const webhookProxyUrl = 'https://smee.io/ErSpkmyocsMfITL'; // replace with your own Webhook Proxy URL
+const webhookProxyUrl = `https://smee.io/${process.env.SMEE_ID}`;
 const source = new EventSource(webhookProxyUrl);
 
 source.onmessage = event => {
