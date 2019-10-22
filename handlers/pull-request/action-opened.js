@@ -1,12 +1,10 @@
 import { getOctokit } from '../../octokit.js';
-import RadixApiClient from '../../radix-api';
+import RadixApiClient, { RADIX_DOMAIN } from '../../radix-api.js';
 
-export default async function handlePullRequestOpened(payload) {
-  console.log('we should start a build right about here');
+async function createPRStatus(octokit, payload, radixJob) {
   let result;
-
+  console.log('Creating status in GitHub');
   try {
-    const octokit = getOctokit(payload.installation.id);
     result = await octokit.repos.createStatus({
       context: 'radix',
       description: 'Sample description',
@@ -14,18 +12,31 @@ export default async function handlePullRequestOpened(payload) {
       repo: payload.repository.name,
       sha: payload.pull_request.head.sha,
       state: 'pending',
-      target_url: 'http://example.com',
+      target_url: `https://console.${RADIX_DOMAIN}/applications/${radixJob.appName}/jobs/view/${radixJob.name}`, // TODO: build this properly
     });
   } catch (e) {
-    console.error('error', e);
+    console.error('Could not create PR status on GitHub', e);
   }
 
-  const api = new RadixApiClient('someToken'); // TODO: inject this  // TODO: get someToken
-
-  api.triggerBuildPipeline({
-    application: payload.repository.name, // TODO: not correct; need to read from API first
-    commitId: payload.pull_request.head.sha,
-  });
-
   return result;
+}
+
+export default async function handlePullRequestOpened(payload) {
+  console.log('we should start a build right about here');
+
+  const api = new RadixApiClient(process.env.RADIX_API_TOKEN);
+  const octokit = getOctokit(payload.installation.id);
+  const apps = await api.getMatchingApplications(payload.repository.ssh_url);
+
+  for (let i = 0; i < apps.length; i++) {
+    // TODO: Handle failures
+    const app = apps[i];
+    const radixJob = await api.triggerBuildPipeline({
+      application: app.name,
+      commitId: payload.pull_request.head.sha,
+    });
+
+    console.log('Created Radix job', radixJob);
+    createPRStatus(octokit, payload, radixJob);
+  }
 }

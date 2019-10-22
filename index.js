@@ -21,9 +21,13 @@ const webhooks = new OctokitWebhooksApi({
   secret: process.env.GITHUB_WEBHOOK_SECRET,
 });
 
+// This allows running the app in localhost. See https://developer.github.com/apps/quickstart-guides/setting-up-your-development-environment/
+// TODO: Allow the app to run on a proper domain
+// TODO: Switch between prod/dev behaviour
 const webhookProxyUrl = `https://smee.io/${process.env.SMEE_ID}`;
 const source = new EventSource(webhookProxyUrl);
 
+// Authentication check
 source.onmessage = event => {
   const webhookEvent = JSON.parse(event.data);
   webhooks
@@ -36,8 +40,9 @@ source.onmessage = event => {
     .catch(console.error);
 };
 
+// Listen for GitHub events
 webhooks.on('*', ({ id, name, payload }) => {
-  console.log(id, name, 'event received', payload);
+  console.log(id, name, 'event received', payload); // TODO: Proper logging
   const action = payload.action;
   const handler = handlers[name];
 
@@ -53,8 +58,10 @@ webhooks.on('*', ({ id, name, payload }) => {
     return;
   }
 
-  actionHandler(payload);
+  actionHandler(payload); // TODO: Wrap in a try/catch
 });
+
+// TODO: Listen to Radix events (e.g. build complete)
 
 // ----------------------------------------------------------------------------
 
