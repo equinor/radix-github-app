@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@kubernetes/client-node": "^0.11.0",
+    "@kubernetes/client-node": "^0.13.2",
     "@octokit/app": "^4.1.0",
     "@octokit/rest": "^16.33.1",
     "@octokit/webhooks": "^6.3.2",
